@@ -8,7 +8,8 @@
 		libavutil-dev \
 		libavformat-dev \
 		libavcodec-dev
-* muduo网络库：https://github.com/chenshuo/muduo
+* ~~muduo网络库：https://github.com/chenshuo/muduo~~ (muduo不支持windows，使用libhv)
+* libhv: https://github.com/ithewei/libhv
 * srtp https://github.com/cisco/libsrtp
 
 # 目录说明
