@@ -1,7 +1,8 @@
 #ifndef MS_RTC_SRTP_SESSION_HPP
 #define MS_RTC_SRTP_SESSION_HPP
 
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
+#include <WinSock2.h>
 #include <srtp2/srtp.h>
 
 #include <vector>

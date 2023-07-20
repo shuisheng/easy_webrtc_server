@@ -2,16 +2,18 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
-#include "muduo/base/Timestamp.h"
-#include "muduo/net/InetAddress.h"
+using namespace std;
+//#include "muduo/base/Timestamp.h"
+//#include "muduo/net/InetAddress.h"
 
 class UdpConnection;
-class UdpServer;
+class UdpServerOuter;
 
-typedef std::function<void(UdpServer*, const uint8_t* buf, size_t len,
-                           const muduo::net::InetAddress& peer_addr, muduo::Timestamp)>
+typedef std::function<void(UdpServerOuter*, const uint8_t* buf, size_t len,
+                           const string& peer_addr, struct timeval& time)>
     ServerPacketCallback;
 typedef std::function<void(const std::shared_ptr<UdpConnection>&, const uint8_t* buf, size_t len,
-                           const muduo::net::InetAddress& peer_addr, muduo::Timestamp)>
+                           const string& peer_addr, struct timeval& time)>
     PacketCallback;

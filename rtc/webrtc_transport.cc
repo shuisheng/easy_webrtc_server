@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "rtp/rtp_util.h"
+#include "ice_server.h"
 
 WebRtcTransport::WebRtcTransport(std::string ip, uint16_t port)
     : is_ready_(false), ip_(ip), port_(port) {
@@ -79,8 +80,9 @@ void WebRtcTransport::OnInputDataPacket(
       std::cout << "parse stun error" << std::endl;
       return;
     }
-    ice_server_->ProcessStunPacket(packet,
-                                   const_cast<sockaddr_in*>(&remote_address));
+    RTC::TransportTuple tt = {0};
+    memcpy(&tt, &remote_address, sizeof(tt));
+    ice_server_->ProcessStunPacket(packet, &tt);
     return;
   }
   if (RTC::DtlsTransport::IsDtls(buf, len)) {
@@ -134,12 +136,13 @@ std::string WebRtcTransport::GetSHA256Fingerprint() {
 void WebRtcTransport::OnIceServerSendStunPacket(const RTC::IceServer* iceServer,
                                                 const RTC::StunPacket* packet,
                                                 RTC::TransportTuple* tuple) {
-  SendPacket(packet->GetData(), packet->GetSize(), *tuple);
+  SendPacket(packet->GetData(), packet->GetSize(), *tuple); 
 }
 
 void WebRtcTransport::OnIceServerSelectedTuple(const RTC::IceServer* iceServer,
                                                RTC::TransportTuple* tuple) {
-  remote_socket_address_ = *tuple;
+  remote_socket_address_ = *(static_cast<struct sockaddr_in*>(tuple));
+  //memcpy(&remote_socket_address_, tuple, sizeof(remote_socket_address_));
   dtls_transport_->Run(RTC::DtlsTransport::Role::SERVER);
 }
 

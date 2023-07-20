@@ -283,6 +283,30 @@ class Time {
   static uint32_t TimeMsToAbsSendTime(uint64_t ms) {
     return static_cast<uint32_t>(((ms << 18) + 500) / 1000) & 0x00FFFFFF;
   }
+
+  static int gettimeofday(struct timeval* tp, void*) {
+    FILETIME ft;
+#if defined(UNDER_CE)
+    // Windows CE does not define GetSystemTimeAsFileTime so we do it in two
+    // steps.
+    SYSTEMTIME st;
+    ::GetSystemTime(&st);
+    ::SystemTimeToFileTime(&st, &ft);
+#else
+    ::GetSystemTimeAsFileTime(&ft);  // never fails
+#endif
+    long long t =
+        (static_cast<long long>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+#if !defined(BOOST_MSVC) || BOOST_MSVC > 1300  // > VC++ 7.0
+    t -= 116444736000000000LL;
+#else
+    t -= 116444736000000000;
+#endif
+    t /= 10;  // microseconds
+    tp->tv_sec = static_cast<long>(t / 1000000UL);
+    tp->tv_usec = static_cast<long>(t % 1000000UL);
+    return 0;
+  }
 };
 
 }  // namespace Utils

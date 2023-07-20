@@ -1,6 +1,6 @@
 #pragma once
 
-#include <netinet/in.h>
+#include <winsock2.h>
 
 #include <cstddef>
 #include <cstdint>

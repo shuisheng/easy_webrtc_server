@@ -8,7 +8,8 @@
 #include "rtc/stun_packet.h"
 
 namespace RTC {
-using TransportTuple = struct sockaddr_in;
+//using TransportTuple = struct sockaddr_in;
+typedef struct sockaddr_in TransportTuple;
 class IceServer {
  public:
   enum class IceState { NEW = 1, CONNECTED, COMPLETED, DISCONNECTED };

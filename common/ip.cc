@@ -3,7 +3,9 @@
 #include "utils.h"
 
 namespace Utils {
-int IP::GetFamily(const std::string &ip) {}
+int IP::GetFamily(const std::string& ip) {
+  return 0;
+}
 
 void IP::GetAddressInfo(const struct sockaddr *addr, int &family, std::string &ip, uint16_t &port) {
 

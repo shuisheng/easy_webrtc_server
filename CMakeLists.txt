@@ -4,7 +4,7 @@ project(webrtc_server)
 
 set(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -Od -Wall -g2 -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 add_compile_options(-g)   
 
@@ -17,10 +17,9 @@ add_library(rtc ${RTC_LIST})
 set(LINK_LIBRARYS 
 srtp2
 ssl 
-crypto
-dl pthread )
+crypto )
 
-set(RTC_LIBRARYS rtc muduo_http muduo_net muduo_base)
+set(RTC_LIBRARYS rtc)
      
 add_executable(rtp_src_example ./example/rtp_src_example.cc)
 target_link_libraries(rtp_src_example ${RTC_LIBRARYS} ${LINK_LIBRARYS} avformat avcodec avutil)

@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "common/logger.h"
+#include <ws2def.h>
 
 namespace RTC {
 /* Static. */

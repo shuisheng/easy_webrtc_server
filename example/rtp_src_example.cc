@@ -12,13 +12,14 @@ extern "C" {
 #include <map>
 #include <mutex>
 #include <thread>
+#include <string>
 
 #include "common/utils.h"
-#include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
-#include "muduo/net/http/HttpRequest.h"
-#include "muduo/net/http/HttpResponse.h"
-#include "muduo/net/http/HttpServer.h"
+//#include "muduo/base/Logging.h"
+//#include "muduo/net/EventLoop.h"
+//#include "muduo/net/http/HttpRequest.h"
+//#include "muduo/net/http/HttpResponse.h"
+//#include "muduo/net/http/HttpServer.h"
 #include "net/udp_connection.h"
 #include "net/udp_server.h"
 #include "rtc/dtls_transport.h"
@@ -28,8 +29,12 @@ extern "C" {
 #include "rtc/webrtc_transport.h"
 #include "session/webrtc_session.h"
 
-using namespace muduo;
-using namespace muduo::net;
+#include "HttpServer.h"
+
+using namespace hv;
+
+//using namespace muduo;
+//using namespace muduo::net;
 
 static int WriteRtpCallback(void* opaque, uint8_t* buf, int buf_size) {
   WebRTCSessionFactory* webrtc_session_factory = (WebRTCSessionFactory*)opaque;
@@ -38,6 +43,7 @@ static int WriteRtpCallback(void* opaque, uint8_t* buf, int buf_size) {
   memcpy(shared_buf.get(), buf, buf_size);
   webrtc_session_factory->GetAllReadyWebRTCSession(&all_sessions);
   for (const auto& session : all_sessions) {
+    auto connection = session->GetNetworkTransport()->connection();
     session->loop()->runInLoop([session, shared_buf, buf_size]() {
       session->webrtc_transport()->EncryptAndSendRtpPacket(shared_buf.get(), buf_size);
     });
@@ -217,39 +223,83 @@ int main(int argc, char* argv[]) {
   RTC::DtlsTransport::ClassInit();
   RTC::DepLibSRTP::ClassInit();
   RTC::SrtpSession::ClassInit();
-  EventLoop loop;
+  //EventLoop loop;
   WebRTCSessionFactory webrtc_session_factory;
 
-  std::thread flv_2_rtp_thread(
-      [&webrtc_session_factory]() { H2642Rtp("./test.flv", &webrtc_session_factory); });
-
-  UdpServer rtc_server(&loop, muduo::net::InetAddress("0.0.0.0", port), "rtc_server", 2);
-  HttpServer http_server(&loop, muduo::net::InetAddress("0.0.0.0", 8000), "http_server",
-                         TcpServer::kReusePort);
-
-  rtc_server.SetPacketCallback([&webrtc_session_factory](UdpServer* server, const uint8_t* buf,
-                                                         size_t len,
-                                                         const muduo::net::InetAddress& peer_addr,
-                                                         muduo::Timestamp timestamp) {
-    WebRTCSessionFactory::HandlePacket(&webrtc_session_factory, server, buf, len, peer_addr,
-                                       timestamp);
+  std::thread flv_2_rtp_thread([&webrtc_session_factory]() {
+    H2642Rtp(
+        "D:\\development\\opensource\\simple_webrtc_server\\out\\Debug\\test."
+        "h264",
+        &webrtc_session_factory);
   });
 
-  http_server.setHttpCallback(
-      [&loop, &webrtc_session_factory, port, ip](const HttpRequest& req, HttpResponse* resp) {
-        if (req.path() == "/webrtc") {
-          resp->setStatusCode(HttpResponse::k200Ok);
-          resp->setStatusMessage("OK");
-          resp->setContentType("text/plain");
-          resp->addHeader("Access-Control-Allow-Origin", "*");
-          auto rtc_session = webrtc_session_factory.CreateWebRTCSession(ip, port);
-          resp->setBody(rtc_session->webrtc_transport()->GetLocalSdp());
-          std::cout << rtc_session->webrtc_transport()->GetLocalSdp() << std::endl;
-        }
-      });
-  loop.runInLoop([&]() {
-    rtc_server.Start();
-    http_server.start();
+ // UdpServer rtc_server(&loop, muduo::net::InetAddress("0.0.0.0", port), "rtc_server", 2);
+  UdpServerOuter rtc_server(port);
+  //HttpServer http_server(&loop, muduo::net::InetAddress("0.0.0.0", 8000), "http_server",
+  //                       TcpServer::kReusePort);
+
+rtc_server.SetPacketCallback(
+    [&webrtc_session_factory](UdpServerOuter* server, const uint8_t* buf,
+                            size_t len, const string& peer_addr,
+                            struct timeval& timestamp) {
+    WebRTCSessionFactory::HandlePacket(&webrtc_session_factory, server, buf,
+                                        len, peer_addr, timestamp);
+    });
+
+  rtc_server.udpSrv_->onMessage = [&rtc_server](const SocketChannelPtr& channel, Buffer* buf) {
+    ServerPacketCallback cb = rtc_server.GetPacketCallback();
+    if (cb) {
+      struct sockaddr_in sockaddr = {0};
+      string remoteAddr = channel->peeraddr();
+      string localAddr = channel->localaddr();
+      struct timeval receive_time;
+      Utils::Time::gettimeofday(&receive_time, NULL);
+      cb(&rtc_server, (const uint8_t*)buf->data(), buf->size(), remoteAddr, receive_time);
+    }
+  };
+
+
+  rtc_server.Start();
+
+  hv::HttpService router;
+  router.GET("/webrtc", [&](HttpRequest* req, HttpResponse* resp) {
+    resp->json["origin"] = req->client_addr.ip;
+    resp->json["url"] = req->url;
+   
+  
+    
+    //resp->json["headers"] = req->headers;
+    //resp->json["headers"]["Access-Control-Allow-Origin"] = "*";
+    //resp->setContentType("text/plain");
+    //resp->addHeader("Access-Control-Allow-Origin", "*");
+    auto rtc_session = webrtc_session_factory.CreateWebRTCSession(ip, port);
+    resp->SetBody(rtc_session->webrtc_transport()->GetLocalSdp());
+    std::cout << rtc_session->webrtc_transport()->GetLocalSdp() << std::endl;
+    return 200;
   });
-  loop.loop();
+
+    http_server_t server;
+    server.service = &router;
+    server.port = 8000;
+    http_server_run(&server, 0);
+  //http_server.setHttpCallback(
+  //    [&loop, &webrtc_session_factory, port, ip](const HttpRequest& req, HttpResponse* resp) {
+  //      if (req.path() == "/webrtc") {
+  //        resp->setStatusCode(HttpResponse::k200Ok);
+  //        resp->setStatusMessage("OK");
+  //        resp->setContentType("text/plain");
+  //        resp->addHeader("Access-Control-Allow-Origin", "*");
+  //        auto rtc_session = webrtc_session_factory.CreateWebRTCSession(ip, port);
+  //        resp->setBody(rtc_session->webrtc_transport()->GetLocalSdp());
+  //        std::cout << rtc_session->webrtc_transport()->GetLocalSdp() << std::endl;
+  //      }
+  //    });
+  //loop.runInLoop([&]() {
+  //  rtc_server.Start();
+  //  http_server.start();
+  //});
+  //loop.loop();
+
+    while (getchar() != '\n');
+    http_server_stop(&server);
 }

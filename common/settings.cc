@@ -8,9 +8,9 @@
 #include "logger.h"
 #include "throw_errors.h"
 #include "utils.h"
-extern "C" {
-#include <getopt.h>
-}
+//extern "C" {
+//#include <getopt.h>
+//}
 
 /* Class variables. */
 
@@ -33,11 +33,11 @@ std::map<LogLevel, std::string> Settings::logLevel2String =
 // clang-format on
 
 /* Class methods. */
-
+/*
 void Settings::SetConfiguration(int argc, char* argv[]) {
   MS_TRACE();
 
-  /* Variables for getopt. */
+   //Variables for getopt. 
 
   int c;
   int optionIdx{0};
@@ -56,7 +56,7 @@ void Settings::SetConfiguration(int argc, char* argv[]) {
   std::string stringValue;
   std::vector<std::string> logTags;
 
-  /* Parse command line options. */
+   //Parse command line options. 
 
   opterr = 0;  // Don't allow getopt to print error messages.
   while ((c = getopt_long_only(argc, argv, "", options, &optionIdx)) != -1) {
@@ -131,7 +131,7 @@ void Settings::SetConfiguration(int argc, char* argv[]) {
     }
   }
 
-  /* Post configuration. */
+  // Post configuration. 
 
   // Set logTags.
   if (!logTags.empty()) Settings::SetLogTags(logTags);
@@ -143,6 +143,7 @@ void Settings::SetConfiguration(int argc, char* argv[]) {
   // Set DTLS certificate files (if provided),
   Settings::SetDtlsCertificateAndPrivateKeyFiles();
 }
+*/
 
 void Settings::PrintConfiguration() {
   MS_TRACE();

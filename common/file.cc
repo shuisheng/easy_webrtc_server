@@ -29,7 +29,7 @@ void Utils::File::CheckFile(const char* file) {
   if (!S_ISREG(fileStat.st_mode)) MS_THROW_ERROR("'%s' is not a regular file", file);
 
   // Ensure it is readable.
-  err = access(file, R_OK);
+  err = access(file, 0);
 
   if (err != 0) MS_THROW_ERROR("cannot read file '%s': %s", file, std::strerror(errno));
 }
