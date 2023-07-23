@@ -30,6 +30,10 @@ UdpServerOuter::UdpServerOuter(int port)
   //thread_pool_->setThreadNum(num_threads);
   udpSrv_.reset(new hv::UdpServer());
   fd = udpSrv_->createsocket(port);
+  //bool reuse = true;
+  //int ret = ::setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (const char*)&reuse, sizeof(reuse));
+  //int ret = ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
+  
 }
 
 UdpServerOuter::~UdpServerOuter() {

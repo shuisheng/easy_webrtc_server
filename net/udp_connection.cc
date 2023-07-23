@@ -52,7 +52,10 @@ UdpConnection::UdpConnection(const std::string& name, const string& peer_addr)
   myname.sin_addr.s_addr = inet_addr("127.0.0.1");
   /* specific interface */
   myname.sin_port = htons(10000);
-  int rc = ::bind(sockfd, (struct sockaddr*)&myname, sizeof(myname));
+  bool reuse = true;
+  //int ret = ::setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (const char*)&reuse, sizeof(reuse));
+  int ret = ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
+  ret = ::bind(sockfd, (struct sockaddr*)&myname, sizeof(myname));
   //udpClient_.onMessage = [this](const SocketChannelPtr& channel, Buffer* buf) {
   //  printf("< %.*s\n", (int)buf->size(), (char*)buf->data());
   //  if (callback_) {
